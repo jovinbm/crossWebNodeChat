@@ -1,14 +1,18 @@
 var httpd = require('http').createServer(handler);
 var io = require('socket.io').listen(httpd);
 var fs = require('fs');
-var port = 4000; //this should be any specific port you want to use
-httpd.listen(4000);
+
+var port = process.env.PORT || 4000;
+
+httpd.listen(port, function(){
+    console.log("Server listening at port " + port);
+});
 
 //function to route the request to the index.html
 function handler(req, res) {
     fs.readFile(__dirname + '/index.html',
         function (err, data) {
-            if (err) {
+            if (err) {                 //handle the error
                 res.writeHead(500);
                 return res.end('Error loading index.html');
             }
@@ -25,25 +29,33 @@ io.sockets.on('connection', function (socket) {
     //emit login event to client.js to prompt for username
     socket.emit('login');
     //variable to save users username
-    var userjina;
+    var user_name;
 
 
+    //listen for a log in event
     socket.on('login', function (username) {
+        //use the users provided name
         if (username) {
-            socket.username = username;
+            socket.username = username; 
         } else {
-            socket.username = socket.id
+            //if no username provided, use socket.id
+            socket.username = socket.id 
         }
-        userjina = socket.username;
-        socket.emit('serverMessage', 'Currently logged in as ' + userjina);
-        socket.broadcast.emit('serverMessage', 'User ' + userjina +
+
+        user_name = socket.username;
+
+        //tell the user that they are logged in
+        socket.emit('serverMessage', 'Currently logged in as ' + user_name); 
+
+        //tell other users that a new user logged in
+        socket.broadcast.emit('serverMessage', 'User ' + user_name +
         ' logged in');
     });
 
-//when someone sends a message, broadcast it to all connected clients
+    //when someone sends a message, broadcast it to oneself & all connected clients
     socket.on('clientMessage', function (content) {
-        socket.emit('serverMessage', content);
+        socket.emit('serverMessage', user_name + ": " + content);
 
-        socket.broadcast.emit('serverMessage', content);
+        socket.broadcast.emit('serverMessage', user_name + ": " + content);
     });
 });
