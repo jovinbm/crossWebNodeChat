@@ -4,7 +4,9 @@ var fs = require('fs');
 
 //defining the database
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://jovinbm:paka1995@ds043180.mongolab.com:43180/crosswebnodechat');
+var dbURL = ''; //provide your mongodb url here*********************
+
+mongoose.connect(dbURL);
 
 //initiate the schema prototype
 var Schema = mongoose.Schema
