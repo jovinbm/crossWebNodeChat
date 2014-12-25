@@ -20,7 +20,6 @@ var messageSchema = new Schema({
 //defining the message model
 var Message = mongoose.model('Message', messageSchema);
 
-
 //test connection
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -93,7 +92,8 @@ io.sockets.on('connection', function (socket) {
             var historyLength = history.length;
             console.log(history);
 
-            for (var i = 0; i <= historyLength; i++){
+            for (var i = 0; i < historyLength; i++){
+                console.log(i);
                 socket.emit('serverMessage', history[i].message);
             }
 
