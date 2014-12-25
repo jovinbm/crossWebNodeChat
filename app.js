@@ -93,7 +93,7 @@ io.sockets.on('connection', function (socket) {
             var historyLength = history.length;
             console.log(history);
 
-            for (var i = historyLength-1; i >= 0; i--){
+            for (var i = 0; i <= historyLength; i++){
                 socket.emit('serverMessage', history[i].message);
             }
 
