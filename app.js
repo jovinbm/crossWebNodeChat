@@ -2,9 +2,44 @@ var httpd = require('http').createServer(handler);
 var io = require('socket.io').listen(httpd);
 var fs = require('fs');
 
+//defining the database
+var mongoose = require('mongoose');
+mongoose.connect('mongodb://jovinbm:paka1995@ds043180.mongolab.com:43180/crosswebnodechat');
+
+//initiate the schema prototype
+var Schema = mongoose.Schema
+
+//defining the message Schema
+var messageSchema = new Schema({
+    sender: String,
+    message: String
+});
+
+//defining the message model
+var Message = mongoose.model('Message', messageSchema);
+
+
+//test connection
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function (callback) {
+    console.log("Succesfully connected to server");
+
+    var newChat = new Message({
+        sender: 'SERVER',
+        message: 'RESTARTED SERVER'
+    });
+
+    newChat.save(function (err, newChat) {
+        if (err) return console.log(err)
+        console.log('saved newchat');
+    });
+});
+
+
 var port = process.env.PORT || 4000;
 
-httpd.listen(port, function(){
+httpd.listen(port, function () {
     console.log("Server listening at port " + port);
 });
 
@@ -42,21 +77,48 @@ io.sockets.on('connection', function (socket) {
 
         //use the users provided name
         if (username) {
-            socket.username = username; 
+            socket.username = username;
         } else {
             //if no username provided, use socket.id
-            socket.username = socket.id 
+            socket.username = socket.id
         }
 
         user_name = socket.username;
 
-        //tell the user that they are logged in
-        socket.emit('serverMessage', 'Currently logged in as ' + user_name);
+        var historyObject = null;
+        Message.find({}, function(err, history){
+            if (err) return console.log(err);
+            var historyLength = history.length;
+            console.log(history);
+
+            for (var i = historyLength-1; i >= 0; i--){
+                socket.emit('serverMessage', history[i].message);
+            }
+
+            socket.emit('serverMessage', 'RECENT HISTORY');
+
+            //tell the user that they are logged in
+            socket.emit('serverMessage', 'Currently logged in as ' + user_name);
+        });
+
         console.log("Told " + user_name + " that they are logged in");
 
         //tell other users that a new user logged in
-        socket.broadcast.emit('serverMessage', 'User ' + user_name +
-        ' logged in');
+        var loggedInStatus = 'User ' + user_name + ' logged in'
+        socket.broadcast.emit('serverMessage', loggedInStatus);
+
+        //save the status
+        var newChat = new Message({
+            sender: user_name,
+            message: loggedInStatus
+        });
+
+        newChat.save(function (err, newChat) {
+            if (err) return console.log(err)
+            console.log('saved newchat');
+        });
+
+
         console.log("Told other users that " + username + " is logged in");
     });
 
@@ -65,18 +127,39 @@ io.sockets.on('connection', function (socket) {
         console.log("Received a 'clientMessage' event from " + user_name + ": " + content);
 
         socket.emit('serverMessage', user_name + ": " + content);
-        console.log("Broadcasting to " + user_name + ": " + content)
+        console.log("Broadcasting to " + user_name + ": " + content);
 
         socket.broadcast.emit('serverMessage', user_name + ": " + content);
         console.log("Broadcasting to all other users except " + user_name + ": " + content);
+
+        var newChat = new Message({
+            sender: user_name,
+            message: user_name + ": " + content
+        });
+
+        newChat.save(function (err, newChat) {
+            if (err) return console.log(err);
+            console.log('saved newchat');
+        });
+
     });
 
 
     //watch for disconnect event when user closes window on browser
-    socket.on('disconnect', function(){
+    socket.on('disconnect', function () {
         console.log("Received a 'disconnect' event from " + user_name);
 
         socket.broadcast.emit('serverMessage', user_name + " logged out");
         console.log("broadcasting a logout message that " + user_name + " logged out");
+
+        var newChat = new Message({
+            sender: user_name,
+            message: user_name + ": logged out"
+        });
+
+        newChat.save(function (err, newChat) {
+            if (err) return console.log(err);
+            console.log('saved newchat');
+        });
     });
 });

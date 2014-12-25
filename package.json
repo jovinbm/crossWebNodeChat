@@ -4,6 +4,7 @@
   "description": "A socket.io chat application",
   "main": "server.js",
   "dependencies": {
+    "mongoose": "^3.8.21",
     "socket.io": "^1.2.1"
   },
   "devDependencies": {},
