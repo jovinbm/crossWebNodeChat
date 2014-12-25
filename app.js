@@ -4,7 +4,7 @@ var fs = require('fs');
 
 //defining the database
 var mongoose = require('mongoose');
-var dbURL = ''; //provide your mongodb url here*********************
+var dbURL = 'mongodb://jovinbm:paka1995@ds043180.mongolab.com:43180/crosswebnodechat'; //provide your mongodb url here*********************
 
 mongoose.connect(dbURL);
 
